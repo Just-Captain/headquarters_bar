@@ -7,28 +7,29 @@ import random
 # menu for a client after choose 💳 Виртуальная карта
 @bot.message_handler(func=lambda message: message.text == '💳 Виртуальная карта')
 def card(message):
+    if Client.objects.filter(telegram_id=message.chat.id).first() == None:
     # add a button for share the contact
-    send_number = types.KeyboardButton(text='📲 Отправить свои контактные данные', request_contact=True)
+        send_number = types.KeyboardButton(text='📲 Отправить свои контактные данные', request_contact=True)
 
     # add a button for back to the main menu
-    back = types.KeyboardButton('🔙 Главное меню')
+        back = types.KeyboardButton('🔙 Главное меню')
 
     # add keyboard for share contact
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(send_number, back)
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        keyboard.add(send_number, back)
 
-    bot.send_message(message.chat.id, 'Зарегистрируйтесь в системе', reply_markup=keyboard)
-    bot.register_next_step_handler(message, get_phone)
+        bot.send_message(message.chat.id, 'Зарегистрируйтесь в системе', reply_markup=keyboard)
+        bot.register_next_step_handler(message, get_phone)
+    else:
+        bot.register_next_step_handler(message, get_phone)
 
 # get a client's phone
 def get_phone(message):
 
+    if Client.objects.filter(phone=message.contact.phone_number).first() != None:
 
-    # if the client sends a number
-    if message.contact is not None:
-        # store the client's number
         phone = message.contact.phone_number
-        client = Client.objects.get(phone=phone)
+        client = Client.objects.filter(phone=phone).first()
         # check if the client exists in the database
         if client != None:
 
@@ -48,7 +49,7 @@ def get_phone(message):
         else:
             # store the client's phone
             new_id = random.randint(100000, 999999)
-            while Client.objects.get(new_id) != None:
+            while Client.objects.filter(unique_id=new_id).first() != None:
                 new_id = random.randint(100000, 999999)
                 
             new_client = Client(telegram_id=message.chat.id, unique_id=new_id, phone=phone)

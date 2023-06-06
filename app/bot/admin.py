@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from bot.models import Client, Personal
+
+admin.site.register(Client)
+admin.site.register(Personal)
