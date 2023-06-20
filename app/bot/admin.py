@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from bot.models import Client, Personal
+from bot.models import JobProfile, UserProfile
 
-admin.site.register(Client)
-admin.site.register(Personal)
+admin.site.register(JobProfile)
+admin.site.register(UserProfile)
