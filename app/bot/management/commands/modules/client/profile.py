@@ -4,7 +4,7 @@ from asgiref.sync import sync_to_async
 
 from bot.models import UserProfile
 
-async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_id = user.id
     # Проверяем, есть ли пользователь в базе данных

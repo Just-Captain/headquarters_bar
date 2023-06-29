@@ -70,7 +70,7 @@ async def start_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Отправляем запрос на номер телефона
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
     finally:
-        start_job_keyboard(update, context)
+        await start_job_keyboard(update, context)
 
 
 async def add_menu_total_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -84,7 +84,7 @@ async def add_menu_total_button(update: Update, context: ContextTypes.DEFAULT_TY
     context.user_data['waiting_for_id'] = True
 
 async def cancel_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    start_job_keyboard(update, context)
+    await start_job_keyboard(update, context)
     # Сбрасываем флаги ожидания
     context.user_data['waiting_for_id'] = False
     context.user_data['waiting_for_menu_total'] = False
@@ -100,7 +100,7 @@ async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f'✅ Сумма текущего заказа успешно отменена. Текущая сумма заказа: {user_profile.menu_total} руб.')
         else:
             await update.message.reply_text('🔴 Произошла ошибка. Пожалуйста, повторите попытку.')
-            start_job_keyboard(update, context)
+            await start_job_keyboard(update, context)
 
         # Сбрасываем флаги ожидания
         context.user_data['waiting_for_menu_total'] = False
@@ -159,14 +159,14 @@ async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_message += f"💵 Сумма текущего заказа: {user_profile.menu_total} руб.\n"
             # Отправляем информацию о пользователе
             await context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
-            start_job_keyboard(update, context)
+            await start_job_keyboard(update, context)
         else:
             await update.message.reply_text('🔴 Произошла ошибка. Пожалуйста, повторите попытку.')
         # Сбрасываем флаги ожидания
         context.user_data['waiting_for_menu_total'] = False
         context.user_data.pop('user_profile', None)
     else:
-        start_job_keyboard(update, context)
+        await start_job_keyboard(update, context)
 
 async def instruction(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Получение полного пути к файлу с инструкцией в папке media

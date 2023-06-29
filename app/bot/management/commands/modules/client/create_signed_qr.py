@@ -16,7 +16,6 @@ async def create_signed_qr_code(user_profile, data, private_key,):
         ),
         hashes.SHA256()
     )
-    print('1','*' * 1000)
     user_profile.signature = signature  # Сохраняем цифровую подпись в профиле пользователя
     user_profile.save()
     qr_data = f'{data}\nЦифровая подпись: {signature.hex()}'
