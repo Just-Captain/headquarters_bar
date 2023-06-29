@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from bot.models import UserProfile, JobProfile
 from bot.management.commands.start_keyboard import start_keyboard, start_job_keyboard
-from bot.management.commands.func.client.create_signed_qr import create_signed_qr_code
+from bot.management.commands.modules.client.create_signed_qr import create_signed_qr_code
 
 
 async def phone_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -36,7 +36,7 @@ async def phone_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                      reply_markup=ReplyKeyboardRemove(remove_keyboard=True))
             await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(qr_code, 'rb'))
             await context.bot.send_message(chat_id=update.effective_chat.id, text='📁 Данные будут доступны во вкладке "🪪 Виртуальная карта"')
-            start_keyboard(update, context)
+            await start_keyboard(update, context)
             
     elif state == 'start_job':
         user = update.effective_user
@@ -45,16 +45,16 @@ async def phone_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         # Проверяем, есть ли пользователь в базе данных
         try:
-            job_profile = JobProfile.objects.get(external_id=user_id)
-            context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
+            job_profile = await sync_to_async(JobProfile.objects.get)(external_id=user_id)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
         except JobProfile.DoesNotExist:
             # Создаем профиль пользователя
-            job_profile = JobProfile.objects.create(external_id=user_id, phone_number=phone_number)
+            job_profile = await sync_to_async(JobProfile.objects.create)(external_id=user_id, phone_number=phone_number)
             job_profile.save()
 
             # Отправляем информацию о работнике
-            context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Вы успешно зарегистрированы!')
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ваш ID: {job_profile.external_id}', reply_markup=ReplyKeyboardRemove(remove_keyboard=True))
-            start_job_keyboard(update, context)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Вы успешно зарегистрированы!')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Ваш ID: {job_profile.external_id}', reply_markup=ReplyKeyboardRemove()) 
+            await start_job_keyboard(update, context)
     else:
         pass

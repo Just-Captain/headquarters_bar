@@ -65,6 +65,10 @@ class JobProfile(models.Model):
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=20)
 
 
+    @sync_to_async
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return "JobProfile"
 

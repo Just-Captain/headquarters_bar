@@ -3,7 +3,7 @@ from telegram import Update
 from cryptography.hazmat.primitives.asymmetric import rsa
 from asgiref.sync import sync_to_async
 
-from bot.management.commands.func.client.create_signed_qr import create_signed_qr_code
+from bot.management.commands.modules.client.create_signed_qr import create_signed_qr_code
 
 from bot.models import UserProfile
 from bot.management.commands.start_keyboard import start_keyboard

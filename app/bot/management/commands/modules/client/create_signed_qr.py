@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
 
-def create_signed_qr_code(user_profile, data, private_key,):
+async def create_signed_qr_code(user_profile, data, private_key,):
 
     # Создание цифровой подписи
     signature = private_key.sign(
