@@ -2,7 +2,14 @@ from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
+from django.db.models.manager import BaseManager
 from asgiref.sync import sync_to_async
+import asyncio
+
+class AsyncManager(BaseManager.from_queryset(models.QuerySet)):
+    """
+    Менеджер модели, который добавляет поддержку асинхронных операций с базой данных.
+    """
 
 class UserProfile(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -17,6 +24,7 @@ class UserProfile(models.Model):
     previous_menu_total = models.FloatField(verbose_name='Предыдущая сумма меню', default=0.0)
     menu_total_timestamp = models.DateTimeField(verbose_name='Время внесения суммы меню', blank=True, null=True)
     signature = models.CharField(verbose_name="Цифровая подпись",max_length=1000, default=0)
+    objects = AsyncManager()
 
     def calculate_discount_percentage(self):
 
@@ -33,12 +41,31 @@ class UserProfile(models.Model):
 
         return discount_percentage
 
+    
+    @classmethod
+    async def create(cls, name):
+        loop = asyncio.get_running_loop()
+        obj = cls(name=name)
+        await loop.run_in_executor(None, obj.save)
+        return obj
+
+    def __str__(self):
+        return "JobProfile"
+    
+    async def update_name(self, new_name):
+        loop = asyncio.get_running_loop()
+        self.name = new_name
+        await loop.run_in_executor(None, self.save)
+
     @sync_to_async
     def save(self, *args, **kwargs):
+        """
+        Переопределение метода save() для поддержки асинхронного сохранения объекта в базе данных.
+        """
         if self.is_special:
             self.discount_percentage = 15
 
-        super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return "UserProfile"
@@ -58,19 +85,34 @@ def set_discount_percentage(sender, instance, **kwargs):
         instance.discount_percentage = instance.calculate_discount_percentage()
 
 
-
 class JobProfile(models.Model):
     id = models.BigAutoField(primary_key=True)
     external_id = models.PositiveIntegerField(verbose_name='ID работника', unique=True)
     phone_number = models.CharField(verbose_name='Номер телефона', max_length=20)
 
 
+    objects = AsyncManager()
     @sync_to_async
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        """
+        Переопределение метода save() для поддержки асинхронного сохранения объекта в базе данных.
+        """
+        return super().save(*args, **kwargs)
+    
+    @classmethod
+    async def create(cls, name):
+        loop = asyncio.get_running_loop()
+        obj = cls(name=name)
+        await loop.run_in_executor(None, obj.save)
+        return obj
 
     def __str__(self):
         return "JobProfile"
+    
+    async def update_name(self, new_name):
+        loop = asyncio.get_running_loop()
+        self.name = new_name
+        await loop.run_in_executor(None, self.save)
 
     class Meta:
         verbose_name = 'Профиль работника'

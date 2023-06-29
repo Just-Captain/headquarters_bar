@@ -28,7 +28,7 @@ async def phone_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
             qr_code = create_signed_qr_code(user_profile, qr_data, private_key)
             user_profile.qr_code = qr_code  # Привязываем QR-код к профилю пользователя
-            user_profile.save()
+            await user_profile.save()
 
             # Отправляем QR-код
             await context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Вы успешно зарегистрированы!')
@@ -50,7 +50,7 @@ async def phone_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         except JobProfile.DoesNotExist:
             # Создаем профиль пользователя
             job_profile = await sync_to_async(JobProfile.objects.create)(external_id=user_id, phone_number=phone_number)
-            job_profile.save()
+            await job_profile.save()
 
             # Отправляем информацию о работнике
             await context.bot.send_message(chat_id=update.effective_chat.id, text='✅ Вы успешно зарегистрированы!')

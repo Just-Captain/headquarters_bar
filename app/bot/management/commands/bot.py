@@ -45,10 +45,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try: 
         user_profile = await sync_to_async(UserProfile.objects.get)(external_id=user_id)
         await context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
+        await start_keyboard(update, context) 
     except UserProfile.DoesNotExist:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
-    finally:
-        await start_keyboard(update, context)
 
 """job start"""
 async def start_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,17 +58,16 @@ async def start_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         job_profile = await sync_to_async(JobProfile.objects.get)(external_id=user_id)
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Вы уже зарегистрированы!')
+        await start_job_keyboard(update, context)
     except JobProfile.DoesNotExist:
         # Отправляем запрос на номер телефона
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
-    finally:
-        await start_job_keyboard(update, context)
+        
 
 
 
 def main():
     
-
     """client handler"""
     start_handler = CommandHandler("start", start)
     phone_number_handler = MessageHandler(filters.CONTACT, phone_number)
