@@ -4,6 +4,8 @@ from io import BytesIO
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
+from bot.management.commands.sync_request import save_data_async
+
 
 async def create_signed_qr_code(user_profile, data, private_key,):
 
@@ -16,8 +18,9 @@ async def create_signed_qr_code(user_profile, data, private_key,):
         ),
         hashes.SHA256()
     )
+    print('1')
     user_profile.signature = signature  # Сохраняем цифровую подпись в профиле пользователя
-    user_profile.save()
+    await save_data_async(user_profile)
     qr_data = f'{data}\nЦифровая подпись: {signature.hex()}'
     qr = qrcode.QRCode(version=1,error_correction=qrcode.constants.ERROR_CORRECT_L,box_size=10,border=4)
     qr.add_data(data)
@@ -30,7 +33,7 @@ async def create_signed_qr_code(user_profile, data, private_key,):
     # Генерируем имя файла на основе ID пользователя и номера телефона
     qr_code_filename = f"qr_code_{user_profile.external_id}.png"
     qr_code_path = os.path.join("media", "qr_codes", qr_code_filename)
-
+    print('2')
     # Сохраняем QR-код в файл
     with open(qr_code_path, 'wb') as f:
         f.write(qr_bytes.read())

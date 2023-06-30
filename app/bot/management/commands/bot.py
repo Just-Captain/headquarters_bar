@@ -5,8 +5,8 @@ from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
 from telegram import Update
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 import asyncio
-from asgiref.sync import sync_to_async
 
+from bot.management.commands.sync_request import get_data_async
 from bot.models import UserProfile, JobProfile
 from .start_keyboard import start_keyboard, start_job_keyboard
 
@@ -34,17 +34,14 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-
-
 """client start"""
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.bot_data['state'] = 'start'
     user = update.effective_user
     user_id = user.id
-
     try: 
-        user_profile = await sync_to_async(UserProfile.objects.get)(external_id=user_id)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
+        user_profile = await get_data_async(UserProfile, user_id)
+        context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
         await start_keyboard(update, context) 
     except UserProfile.DoesNotExist:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
@@ -56,15 +53,12 @@ async def start_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = user.id
     # Проверяем, есть ли пользователь в базе данных
     try:
-        job_profile = await sync_to_async(JobProfile.objects.get)(external_id=user_id)
+        job_profile = await get_data_async(JobProfile, user_id)
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Вы уже зарегистрированы!')
         await start_job_keyboard(update, context)
     except JobProfile.DoesNotExist:
         # Отправляем запрос на номер телефона
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
-        
-
-
 
 def main():
     
@@ -99,7 +93,6 @@ def main():
     
     """setting application"""
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-
 
 class Command(BaseCommand):
 

@@ -8,6 +8,8 @@ import re
 from bot.management.commands.start_keyboard import start_job_keyboard
 from bot.models import UserProfile
 
+from bot.management.commands.sync_request import get_data_async, save_data_async
+
 async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text == '❌ Удалить сумму текущего заказа':
         user_profile = context.user_data.get('user_profile')
@@ -15,7 +17,7 @@ async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Возврат суммы из предыдущего меню в текущую сумму меню
             user_profile.total_spent = user_profile.total_spent - decimal.Decimal(user_profile.menu_total)
             user_profile.menu_total = 0
-            user_profile.save()
+            save_data_async(user_profile)
             await update.message.reply_text(f'✅ Сумма текущего заказа успешно отменена. Текущая сумма заказа: {user_profile.menu_total} руб.')
         else:
             await update.message.reply_text('🔴 Произошла ошибка. Пожалуйста, повторите попытку.')
@@ -29,7 +31,7 @@ async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not user_id.isdigit():
             await update.message.reply_text('ID клиента должно быть числом, повторите ввод:')
         try:
-            user_profile = UserProfile.objects.get(external_id=user_id)
+            user_profile = await get_data_async(user_id)
             vip_status = "VIP-клиент ⭐️⭐️⭐️" if user_profile.is_special else "Обычный клиент ⭐️"
             # Формируем информацию о пользователе
             reply_message = f"Статус: {vip_status}\n"
@@ -67,7 +69,7 @@ async def handle_menu_total(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             # Сохраняем дату и время обновления меню
             user_profile.menu_total_timestamp = datetime.now()
-            user_profile.save()
+            save_data_async(user_profile)
             await update.message.reply_text(f'Сумма текущего заказа {user_profile.menu_total} руб. успешно добавлена.')
             vip_status = "VIP-клиент ⭐️⭐️⭐️" if user_profile.is_special else "Обычный клиент ⭐️"
             # Формируем информацию о пользователе
