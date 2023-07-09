@@ -1,13 +1,24 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from bot.management.commands.config import application
-from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
-from telegram import Update
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import (
+    CommandHandler, 
+    ContextTypes,
+    MessageHandler, 
+    filters, 
+    ConversationHandler
+)
+from telegram import (
+    Update, 
+    KeyboardButton, 
+    ReplyKeyboardMarkup
+)
 import asyncio
 
-from bot.management.commands.sync_request import get_data_async
-from bot.models import UserProfile, JobProfile
+from bot.management.commands.config import USER_TYPING, CHOOSING_OPTION_CLIENT, CHOOSING_OPTION_WORKER, CHECK_CORRECT, PHONE_NUMBER, CHOOSING_OPTION_PHONE
+
+from bot.management.commands.sync_request import get_data_id_async
+from bot.models import User, Worker
 from .start_keyboard import start_keyboard, start_job_keyboard
 
 """client modules"""
@@ -19,10 +30,10 @@ from bot.management.commands.modules.client.virtual_card import virtual_card
 
 """job modules"""
 from bot.management.commands.modules.personal.scan_code import scan_code
-from bot.management.commands.modules.personal.add_menu_total_button import add_menu_total_button
-from bot.management.commands.modules.personal.cancel_operation import cancel_operation
-from bot.management.commands.modules.personal.handle_menu_total import handle_menu_total
+from bot.management.commands.modules.personal.create_check import phone_number_billing, check, check_the_check
 from bot.management.commands.modules.personal.instruction import instruction
+from bot.management.commands.modules.personal.cancel_operation import cancel_operation
+
 
 import logging
 # Enable logging
@@ -34,70 +45,67 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-"""client start"""
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """client start"""
     context.bot_data['state'] = 'start'
     user = update.effective_user
     user_id = user.id
     try: 
-        user_profile = await get_data_async(UserProfile, user_id)
+        user_profile = await get_data_id_async(User, user_id)
         context.bot.send_message(chat_id=update.effective_chat.id, text='🟢 Вы уже зарегистрированы!')
         await start_keyboard(update, context) 
-    except UserProfile.DoesNotExist:
+    except User.DoesNotExist:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
+    return CHOOSING_OPTION_CLIENT
 
-"""job start"""
 async def start_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """job start"""
     context.bot_data['state'] = 'start_job'
     user = update.effective_user
     user_id = user.id
     # Проверяем, есть ли пользователь в базе данных
     try:
-        job_profile = await get_data_async(JobProfile, user_id)
+        job_profile = await get_data_id_async(Worker, user_id)
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Вы уже зарегистрированы!')
         await start_job_keyboard(update, context)
-    except JobProfile.DoesNotExist:
+    except Worker.DoesNotExist:
         # Отправляем запрос на номер телефона
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Для этого нажмите на кнопку "Отправить номер 📲"', reply_markup=ReplyKeyboardMarkup([[KeyboardButton('📲 Отправить номер', request_contact=True)]], resize_keyboard=True, one_time_keyboard=True))
+    return CHOOSING_OPTION_WORKER
+
 
 def main():
-    
-    """client handler"""
-    start_handler = CommandHandler("start", start)
-    phone_number_handler = MessageHandler(filters.CONTACT, phone_number)
-    profile_handler = MessageHandler(filters.Text('👨‍💼 Профиль'), profile)
-    afisha_handler = MessageHandler(filters.Text('📆 Афиша'), afisha)
-    contact_handler = MessageHandler(filters.Text('📗 Контакты'), contact)
-    virtual_card_handler = MessageHandler(filters.Text('🪪 Виртуальная карта'), virtual_card)
-
-    """job handler"""
-    start_job_hander = CommandHandler('start_job', start_job)
-    scan_code_handler = MessageHandler(filters.Text('🔳 Отсканировать QR-код'), scan_code)
-    instruction_handler = MessageHandler(filters.Text('📋 Инструкция'), instruction)
-    add_menu_total_button_handler = MessageHandler(filters.Text('👆 Ввести ID клиента'), add_menu_total_button)
-    cancel_operation_handler = MessageHandler(filters.Text('↩️ Назад'), cancel_operation)
-    handle_menu_total_handler = MessageHandler(filters.Text, handle_menu_total)
-
-    application.add_handler(start_handler)
-    application.add_handler(phone_number_handler)
-    application.add_handler(profile_handler)
-    application.add_handler(afisha_handler)
-    application.add_handler(contact_handler)
-    application.add_handler(virtual_card_handler)
-    application.add_handler(start_job_hander)
-    application.add_handler(scan_code_handler)
-    application.add_handler(instruction_handler)
-    application.add_handler(add_menu_total_button_handler)
-    application.add_handler(cancel_operation_handler)
-    application.add_handler(handle_menu_total_handler)
-    
-    """setting application"""
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-
+    conv_handler = ConversationHandler(
+    entry_points=[CommandHandler('start', start), CommandHandler('start_job', start_job)],
+    states={
+        CHOOSING_OPTION_CLIENT: [
+            MessageHandler(filters.Text('👨‍💼 Профиль'), profile),
+            MessageHandler(filters.Text('📆 Афиша'), afisha),
+            MessageHandler(filters.Text('📗 Контакты'), contact),
+            MessageHandler(filters.Text('🪪 Виртуальная карта'), virtual_card),
+            MessageHandler(filters.CONTACT, phone_number)
+            ],
+        CHOOSING_OPTION_WORKER: [
+            MessageHandler(filters.Text('🔳 Отсканировать QR-код'), scan_code),
+            MessageHandler(filters.Text('📋 Инструкция'), instruction),
+            MessageHandler(filters.Text('👆 Ввести ID клиента'), phone_number_billing),
+            MessageHandler(filters.Text('↩️ Назад'), cancel_operation),
+            MessageHandler(filters.CONTACT, phone_number),
+        ],
+        PHONE_NUMBER: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, check,)
+        ],
+        CHECK_CORRECT: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, check_the_check,)
+        ]
+    },
+    fallbacks=[]
+)
+    application.add_handler(conv_handler)
+    application.run_polling(allowed_updates=Update.ALL_TYPES, poll_interval=0.5)
 class Command(BaseCommand):
-
     help = "Telegram - bot"
-
     def handle(self, *args, **kwargs):
         asyncio.run(main())
         

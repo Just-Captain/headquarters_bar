@@ -8,7 +8,6 @@ from bot.management.commands.sync_request import save_data_async
 
 
 async def create_signed_qr_code(user_profile, data, private_key,):
-
     # Создание цифровой подписи
     signature = private_key.sign(
         data.encode(),
@@ -18,7 +17,6 @@ async def create_signed_qr_code(user_profile, data, private_key,):
         ),
         hashes.SHA256()
     )
-    print('1')
     user_profile.signature = signature  # Сохраняем цифровую подпись в профиле пользователя
     await save_data_async(user_profile)
     qr_data = f'{data}\nЦифровая подпись: {signature.hex()}'
@@ -29,11 +27,9 @@ async def create_signed_qr_code(user_profile, data, private_key,):
     qr_bytes = BytesIO()
     qr_img.save(qr_bytes, format='PNG')
     qr_bytes.seek(0)
-
     # Генерируем имя файла на основе ID пользователя и номера телефона
     qr_code_filename = f"qr_code_{user_profile.external_id}.png"
     qr_code_path = os.path.join("media", "qr_codes", qr_code_filename)
-    print('2')
     # Сохраняем QR-код в файл
     with open(qr_code_path, 'wb') as f:
         f.write(qr_bytes.read())

@@ -3,15 +3,15 @@ from telegram import Update
 from cryptography.hazmat.primitives.asymmetric import rsa
 from bot.management.commands.modules.client.create_signed_qr import create_signed_qr_code
 import qrcode
-from bot.models import UserProfile
+from bot.models import User
 from bot.management.commands.start_keyboard import start_keyboard
-from bot.management.commands.sync_request import get_data_async, save_data_async
+from bot.management.commands.sync_request import get_data_id_async, save_data_async
 
 
 async def virtual_card(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_id = user.id
-    user_profile = await get_data_async(UserProfile, user_id)
+    user_profile = await get_data_id_async(User, user_id)
     await context.bot.send_message(chat_id=update.effective_chat.id, text='🪪 Ваша виртуальная карта:')
 
     # Создаем QR-код

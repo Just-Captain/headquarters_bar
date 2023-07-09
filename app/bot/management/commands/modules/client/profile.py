@@ -1,16 +1,16 @@
 from telegram.ext import ContextTypes
 from telegram import Update
-from bot.models import UserProfile
+from bot.models import User
 
-from bot.management.commands.sync_request import get_data_async
+from bot.management.commands.sync_request import get_data_id_async
 
 async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_id = user.id
     # Проверяем, есть ли пользователь в базе данных
     try:
-        user_profile = await get_data_async(UserProfile, user_id)
-    except UserProfile.DoesNotExist:
+        user_profile = await get_data_id_async(User, user_id)
+    except User.DoesNotExist:
         await context.bot.send_message(chat_id=update.effective_chat.id, text='🔴 Вы не зарегистрированы!')
 
     message = ""
