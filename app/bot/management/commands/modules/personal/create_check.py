@@ -14,7 +14,7 @@ async def phone_number_billing(update: Update, context: ContextTypes.DEFAULT_TYP
     return PHONE_NUMBER
 
 async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    phone_number = f'+7{update.message.text}'
+    phone_number = f'7{update.message.text}'
     try:
         user_profile = await get_data_phone_async(User, phone_number)
         context.user_data['user'] = user_profile

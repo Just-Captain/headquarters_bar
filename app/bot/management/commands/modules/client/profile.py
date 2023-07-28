@@ -20,7 +20,6 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         message += "\n📉 Ваша скидка - 15%"
         message += f"\n🆔 Ваш ID: {user_profile.external_id}"
         message += f"\n💰 Общая сумма заказов: {user_profile.total_spent} руб."
-        message += f"\n💵 Сумма текущего заказа: {user_profile.menu_total} руб."
     else:
         discount_percentage = user_profile.calculate_discount_percentage()
         if discount_percentage == 10:
@@ -34,7 +33,6 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             message += f"\n🆔 Ваш ID: {user_profile.external_id}"
             message += f"\n📉 Текущая скидка: {discount_percentage}%"
             message += f"\n💰 Общая сумма заказов: {user_profile.total_spent} руб."
-            message += f"\n💵 Сумма текущего заказа: {user_profile.menu_total} руб."
 
     if not user_profile.is_special and discount_percentage != 10:
         # Определяем, сколько еще надо потратить для повышения скидочного процента
